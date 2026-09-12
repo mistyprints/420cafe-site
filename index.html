@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>420 Cafe — Recensioni recenti</title>
-<style>  
+<style>
   :root {
     --green: #2D6E4F;
     --green-dark: #1E4E38;
@@ -203,10 +203,7 @@
     document.getElementById('reviews').innerHTML = html;
   }
 
-  // Il percorso personalizzato (/api/reviews) potrebbe non essere onorato
-  // su un deploy fatto per trascinamento; provo prima quello, poi cado
-  // sul percorso di default che Netlify assegna sempre a ogni funzione,
-  // qualunque sia il metodo di deploy usato.
+  // Legge le recensioni dalla Cloudflare Pages Function in functions/api/reviews.js
   async function tryPath(path) {
     // no-store + parametro anti-cache: eliminiamo ogni dubbio che si stia
     // vedendo una risposta salvata invece dell'ultima versione pubblicata
@@ -222,7 +219,7 @@
   }
 
   async function load() {
-    const candidatePaths = ['/api/reviews', '/.netlify/functions/reviews'];
+    const candidatePaths = ['/api/reviews'];
     let found = null;
     const attempts = [];
     for (const path of candidatePaths) {
@@ -237,7 +234,7 @@
     if (!found) {
       renderState(
         "Non trovo la funzione delle recensioni su nessuno dei percorsi noti.<br>" +
-        "Verifica che la cartella <code>netlify/functions/</code> sia davvero arrivata nel deploy (controlla la lista file nella pagina Deploys su Netlify)." +
+        "Verifica che il file esista esattamente in <code>functions/api/reviews.js</code> nel repository GitHub, e che il progetto Cloudflare Pages abbia completato un deploy dopo quel caricamento." +
         `<code>${escapeHtml(attempts.join(' | '))}</code>`,
         true
       );
@@ -252,7 +249,7 @@
       const ver = data && data._version ? ` | versione funzione: ${data._version}` : " | versione funzione: (non presente -- codice vecchio, senza marcatore)";
       renderState(
         "Non sono riuscito a caricare le recensioni.<br>" +
-        "Controlla: GOOGLE_PLACES_API_KEY impostata nelle Environment variables di Netlify, sito ri-deployato dopo averla aggiunta." +
+        "Controlla: GOOGLE_PLACES_API_KEY impostata nelle Environment variables del progetto Cloudflare Pages, e che sia stato rifatto un deploy dopo averla aggiunta." +
         `<code>${escapeHtml((data && data.error || `HTTP ${resp.status}`) + extra + ver)}</code>`,
         true
       );
