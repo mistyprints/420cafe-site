@@ -25,7 +25,7 @@
     -webkit-font-smoothing: antialiased;
   }
   header {
-    background: linear-gradient(180deg, var(--green) 0%, var(--green-dark) 100%);
+    background: var(--green);
     color: #fff;
     padding: 26px 22px 20px;
     text-align: center;
@@ -45,9 +45,8 @@
   }
   .divider {
     height: 6px;
-    background:
-      repeating-linear-gradient(135deg, var(--maroon) 0 4px, transparent 4px 8px);
-    opacity: 0.85;
+    background: var(--maroon);
+    opacity: 0.8;
   }
   .overall {
     display: flex;
@@ -134,6 +133,17 @@
     margin-top: 4px;
     font-size: 13px;
   }
+  footer {
+    display: flex;
+    justify-content: center;
+    padding: 6px 0 22px;
+  }
+  footer .zappa-mark {
+    width: 46px;
+    height: auto;
+    fill: #262420;
+    opacity: 0.55;
+  }
   @media (prefers-reduced-motion: no-preference) {
     .card { animation: rise 0.25s ease-out both; }
     @keyframes rise { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
@@ -155,6 +165,10 @@
 <main id="reviews">
   <div class="state" id="state">Carico le recensioni più recenti…</div>
 </main>
+
+<footer>
+  <svg class="zappa-mark" viewBox="0 55 454 335" role="img" aria-label="420 Cafe"><path d="M 146,279 L 144,285 L 144,348 L 149,362 L 160,374 L 174,380 L 194,385 L 208,386 L 209,387 L 237,387 L 238,386 L 256,384 L 277,378 L 286,373 L 296,362 L 301,348 L 301,285 L 296,275 L 292,272 L 282,269 L 277,273 L 262,281 L 248,286 L 234,289 L 212,289 L 211,288 L 205,288 L 183,281 L 173,276 L 163,269 L 153,272 Z M 1,250 L 3,267 L 12,277 L 21,280 L 37,277 L 46,268 L 74,212 L 82,205 L 98,200 L 347,200 L 357,202 L 371,212 L 399,268 L 408,277 L 417,280 L 431,278 L 440,270 L 444,260 L 442,228 L 428,174 L 415,146 L 396,118 L 371,94 L 344,77 L 307,64 L 275,59 L 170,59 L 142,63 L 101,77 L 78,91 L 58,108 L 42,127 L 20,166 L 7,207 Z"/></svg>
+</footer>
 
 <script>
   function starString(rating) {
@@ -199,7 +213,7 @@
     const overallEl = document.getElementById('place-overall');
     if (place.rating) {
       overallEl.innerHTML =
-        `<span class="score">${place.rating.toFixed(1)}</span> · ${place.userRatingCount || 0} reviews`;
+        `<span class="score">${place.rating.toFixed(1).replace('.', ',')} ★</span> · ${place.userRatingCount || 0} reviews`;
     } else {
       overallEl.textContent = "Valutazione non disponibile";
     }
