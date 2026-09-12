@@ -151,9 +151,6 @@
   <div class="overall" id="place-overall">Carico i dati del locale…</div>
 </header>
 <div class="divider"></div>
-<div style="text-align:center; font-size:10px; color:#B8A778; padding:5px 10px 0;">
-  pagina build: menu-style-1
-</div>
 
 <main id="reviews">
   <div class="state" id="state">Carico le recensioni più recenti…</div>
@@ -202,7 +199,7 @@
     const overallEl = document.getElementById('place-overall');
     if (place.rating) {
       overallEl.innerHTML =
-        `<span class="score">${place.rating.toFixed(1)}</span> · ${place.userRatingCount || 0} recensioni totali`;
+        `<span class="score">${place.rating.toFixed(1)}</span> · ${place.userRatingCount || 0} reviews`;
     } else {
       overallEl.textContent = "Valutazione non disponibile";
     }
