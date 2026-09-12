@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>420 Cafe — Recensioni recenti</title>
+<style>
+  :root {
+    --green: #2D6E4F;
+    --green-dark: #1E4E38;
+    --yellow: #FFD700;
+    --ink: #1B1B18;
+    --paper: #FBFAF6;
+    --line: #E7E2D6;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  header {
+    background: linear-gradient(180deg, var(--green) 0%, var(--green-dark) 100%);
+    color: #fff;
+    padding: 30px 22px 26px;
+  }
+  header h1 {
+    margin: 0 0 6px;
+    font-size: 26px;
+    font-weight: 800;
+    letter-spacing: -0.01em;
+  }
+  .overall {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    font-size: 15px;
+    color: rgba(255,255,255,0.88);
+  }
+  .overall .score {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--yellow);
+  }
+  main {
+    max-width: 560px;
+    margin: 0 auto;
+    padding: 18px 16px 40px;
+  }
+  .card {
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 16px 18px;
+    margin-bottom: 12px;
+  }
+  .card .row1 {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 10px;
+    margin-bottom: 6px;
+  }
+  .card .author {
+    font-weight: 700;
+    font-size: 15px;
+  }
+  .card .when {
+    font-size: 13px;
+    color: #857F6E;
+    white-space: nowrap;
+  }
+  .stars {
+    color: var(--yellow);
+    letter-spacing: 1px;
+    font-size: 15px;
+    -webkit-text-stroke: 0.5px #B8960A;
+  }
+  .card .text {
+    font-size: 15px;
+    line-height: 1.5;
+    color: #2A2A25;
+    margin-top: 8px;
+    white-space: pre-line;
+  }
+  .state {
+    text-align: center;
+    padding: 60px 20px;
+    color: #6B6558;
+    font-size: 15px;
+    line-height: 1.6;
+  }
+  .state.error {
+    color: #8A3B2E;
+  }
+  .state code {
+    display: block;
+    margin-top: 10px;
+    font-size: 12px;
+    background: #F1EEE5;
+    border-radius: 6px;
+    padding: 8px 10px;
+    word-break: break-all;
+    color: #55503F;
+  }
+  .badge-empty {
+    display: inline-block;
+    margin-top: 4px;
+    font-size: 13px;
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .card { animation: rise 0.25s ease-out both; }
+    @keyframes rise { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1 id="place-name">420 Cafe</h1>
+  <div class="overall" id="place-overall">Carico i dati del locale…</div>
+</header>
+
+<main id="reviews">
+  <div class="state" id="state">Carico le recensioni più recenti…</div>
+</main>
+
+<script>
+  function starString(rating) {
+    const n = Math.round(rating || 0);
+    return "★★★★★☆☆☆☆☆".slice(5 - n, 10 - n);
+  }
+
+  // Ricava un timestamp numerico da una Review per poterla ordinare noi
+  // stessi lato client: non ci affidiamo a un solo parametro dell'API
+  // per garantire "più recenti prima" anche se il campo esatto restituito
+  // differisse leggermente.
+  function reviewTime(r) {
+    const t = r.publishTime;
+    if (!t) return 0;
+    const d = (t instanceof Date) ? t : new Date(t);
+    return isNaN(d.getTime()) ? 0 : d.getTime();
+  }
+
+  function escapeHtml(s) {
+    return (s || "").replace(/[&<>"']/g, m => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));
+  }
+
+  function renderState(html, isError) {
+    document.getElementById('reviews').innerHTML =
+      `<div class="state${isError ? ' error' : ''}">${html}</div>`;
+  }
+
+  // Estrae il testo della recensione gestendo sia una stringa semplice
+  // sia un oggetto {text: "..."}, SENZA la trappola classica di "||":
+  // una stringa vuota e' un valore legittimo (recensione con solo
+  // stelle, senza commento) e non deve far ripiegare su altro.
+  function extractText(t) {
+    if (typeof t === 'string') return t;
+    if (t && typeof t.text === 'string') return t.text;
+    return '';
+  }
+
+  function render(place) {
+    const name = (place.displayName && place.displayName.text) || place.displayName || "420 Cafe";
+    document.getElementById('place-name').textContent = name;
+
+    const overallEl = document.getElementById('place-overall');
+    if (place.rating) {
+      overallEl.innerHTML =
+        `<span class="score">${place.rating.toFixed(1)}</span> · ${place.userRatingCount || 0} recensioni totali`;
+    } else {
+      overallEl.textContent = "Valutazione non disponibile";
+    }
+
+    const reviews = (place.reviews || []).slice().sort((a, b) => reviewTime(b) - reviewTime(a));
+
+    if (reviews.length === 0) {
+      renderState("Nessuna recensione restituita dall'API al momento.", false);
+      return;
+    }
+
+    const html = reviews.map(r => {
+      const author = escapeHtml(r.authorAttribution && r.authorAttribution.displayName || "Anonimo");
+      const dateObj = r.publishTime ? new Date(r.publishTime) : null;
+      const dateStr = dateObj && !isNaN(dateObj) ? dateObj.toLocaleDateString('it-IT', {day:'numeric', month:'short', year:'numeric'}) : "";
+      const rel = r.relativePublishTimeDescription || "";
+      const when = escapeHtml(dateStr ? `${dateStr}${rel ? ' · ' + rel : ''}` : rel);
+      const text = escapeHtml(extractText(r.text));
+      return `
+        <div class="card">
+          <div class="row1">
+            <span class="author">${author}</span>
+            <span class="when">${when}</span>
+          </div>
+          <span class="stars">${starString(r.rating)}</span>
+          ${text ? `<div class="text">${text}</div>` : ""}
+        </div>`;
+    }).join("");
+
+    document.getElementById('reviews').innerHTML = html;
+  }
+
+  // Il percorso personalizzato (/api/reviews) potrebbe non essere onorato
+  // su un deploy fatto per trascinamento; provo prima quello, poi cado
+  // sul percorso di default che Netlify assegna sempre a ogni funzione,
+  // qualunque sia il metodo di deploy usato.
+  async function tryPath(path) {
+    // no-store + parametro anti-cache: eliminiamo ogni dubbio che si stia
+    // vedendo una risposta salvata invece dell'ultima versione pubblicata
+    const resp = await fetch(`${path}?t=${Date.now()}`, { cache: 'no-store' });
+    const text = await resp.text();
+    let data;
+    try {
+      data = JSON.parse(text);
+    } catch {
+      throw new Error(`${path} non ha risposto con JSON (probabile 404 -- funzione non trovata a questo percorso)`);
+    }
+    return { resp, data, path };
+  }
+
+  async function load() {
+    const candidatePaths = ['/api/reviews', '/.netlify/functions/reviews'];
+    let found = null;
+    const attempts = [];
+    for (const path of candidatePaths) {
+      try {
+        found = await tryPath(path);
+        break;
+      } catch (err) {
+        attempts.push(String(err.message || err));
+      }
+    }
+
+    if (!found) {
+      renderState(
+        "Non trovo la funzione delle recensioni su nessuno dei percorsi noti.<br>" +
+        "Verifica che la cartella <code>netlify/functions/</code> sia davvero arrivata nel deploy (controlla la lista file nella pagina Deploys su Netlify)." +
+        `<code>${escapeHtml(attempts.join(' | '))}</code>`,
+        true
+      );
+      return;
+    }
+
+    const { resp, data } = found;
+    if (!resp.ok) {
+      const extra = data && data.debug_altre_variabili_visibili_qui
+        ? ` | variabili visibili alla funzione: ${JSON.stringify(data.debug_altre_variabili_visibili_qui)}`
+        : "";
+      const ver = data && data._version ? ` | versione funzione: ${data._version}` : " | versione funzione: (non presente -- codice vecchio, senza marcatore)";
+      renderState(
+        "Non sono riuscito a caricare le recensioni.<br>" +
+        "Controlla: GOOGLE_PLACES_API_KEY impostata nelle Environment variables di Netlify, sito ri-deployato dopo averla aggiunta." +
+        `<code>${escapeHtml((data && data.error || `HTTP ${resp.status}`) + extra + ver)}</code>`,
+        true
+      );
+      return;
+    }
+
+    render(data);
+  }
+
+  load();
+</script>
+</body>
+</html>
